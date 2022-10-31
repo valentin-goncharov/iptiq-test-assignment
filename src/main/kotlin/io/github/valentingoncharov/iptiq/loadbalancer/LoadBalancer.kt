@@ -34,4 +34,10 @@ class LoadBalancer(
             }
         } ?: false
     }
+
+    suspend fun exclude(providerId: String) = withContext(loadBalancerContext){
+        registeredProviders[providerId] ?. let { provider ->
+            registry.remove(provider)
+        } ?: false
+    }
 }

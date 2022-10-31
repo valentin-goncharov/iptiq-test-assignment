@@ -87,4 +87,64 @@ internal class LoadBalancerTest {
             assertThat(loadBalancer.include(UUID.randomUUID().toString())).isFalse
         }
     }
+
+
+    @Test
+    fun `should exclude provider from load balancing`() {
+        val registry = TestProviderRegistry()
+        val loadBalancer = LoadBalancer(registry)
+
+        val providerId = UUID.randomUUID().toString()
+
+        runTest {
+            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+            assertThat(registry.size).isEqualTo(1)
+
+            assertThat(loadBalancer.exclude(providerId)).isTrue
+            assertThat(registry.size).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `should return false when exclude not registered provider`() {
+        val loadBalancer = LoadBalancer(TestProviderRegistry())
+        runTest {
+            assertThat(loadBalancer.register(Provider())).isTrue
+
+            assertThat(loadBalancer.exclude(UUID.randomUUID().toString())).isFalse
+        }
+    }
+
+    @Test
+    fun `return the included provider to load balancing`() {
+        val loadBalancer = LoadBalancer(TestProviderRegistry())
+
+        val providerId = UUID.randomUUID().toString()
+        runTest {
+            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+
+            assertThat(loadBalancer.exclude(providerId)).isTrue
+
+            assertThat(loadBalancer.include(providerId)).isTrue
+
+            assertThat(loadBalancer.get()).isEqualTo(providerId)
+        }
+    }
+
+    @Test
+    fun `should return false when trying to include provider but load balancer capacity is exceeded`() {
+        val loadBalancer = LoadBalancer(registry = TestProviderRegistry(), capacity = 1)
+
+        val providerId = UUID.randomUUID().toString()
+
+        runTest {
+            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+
+            assertThat(loadBalancer.exclude(providerId)).isTrue
+
+            assertThat(loadBalancer.register(Provider())).isTrue
+
+            assertThat(loadBalancer.include(providerId)).isFalse
+        }
+    }
 }
