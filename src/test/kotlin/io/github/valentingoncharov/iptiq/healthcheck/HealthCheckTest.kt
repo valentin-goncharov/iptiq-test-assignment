@@ -47,5 +47,5 @@ internal class HealthCheckTest {
 }
 
 private class FailHeartbeat: Heartbeat{
-    override suspend fun check() = false
+    override fun check() = false
 }

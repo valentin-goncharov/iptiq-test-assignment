@@ -11,9 +11,16 @@ internal class ProviderTest {
 
     @Test
     fun `should return provider id as string`() = runTest {
-        val id = UUID.randomUUID().toString()
+        val id = "Test 1"
         val provider = Provider(id)
 
         assertThat(provider.get()).isEqualTo(id)
+    }
+
+    @Test
+    fun `should return true on check`() = runTest {
+        val provider = Provider()
+
+        assertThat(provider.check()).isTrue
     }
 }
