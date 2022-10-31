@@ -22,10 +22,10 @@ class LoadBalancer(
 
     suspend fun register(provider: Provider) = withContext(loadBalancerContext) {
         registeredProviders.putIfAbsent(provider.id, provider)
-        addToRegistry(provider.id)
+        include(provider.id)
     }
 
-    private suspend fun addToRegistry(providerId: String) = withContext(loadBalancerContext) {
+    suspend fun include(providerId: String) = withContext(loadBalancerContext) {
         registeredProviders[providerId] ?. let {provider ->
             if (registry.size < capacity) {
                 registry.add(provider)

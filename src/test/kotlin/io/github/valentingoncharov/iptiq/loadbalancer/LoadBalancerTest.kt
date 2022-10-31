@@ -76,4 +76,15 @@ internal class LoadBalancerTest {
             coVerify(exactly = 10) { registry.next() }
         }
     }
+
+    @Test
+    fun `should return false when include not registered provider`() {
+        val loadBalancer = LoadBalancer(TestProviderRegistry())
+
+        runTest {
+            assertThat(loadBalancer.register(Provider())).isTrue
+
+            assertThat(loadBalancer.include(UUID.randomUUID().toString())).isFalse
+        }
+    }
 }
