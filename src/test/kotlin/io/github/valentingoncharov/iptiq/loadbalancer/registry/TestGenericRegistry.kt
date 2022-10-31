@@ -1,22 +1,21 @@
 package io.github.valentingoncharov.iptiq.loadbalancer.registry
 
-import io.github.valentingoncharov.iptiq.provider.Provider
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 
 @OptIn(DelicateCoroutinesApi::class)
-class TestProviderRegistry: Registry<Provider> {
+class TestGenericRegistry<T>: Registry<T> {
 
-    private val registryContext = newSingleThreadContext("Test-Provider-Registry-Context")
+    private val registryContext = newSingleThreadContext("Test-Generic-Registry-Context")
 
-    private var registry = mutableSetOf<Provider>()
+    private var registry = mutableSetOf<T>()
 
-    override suspend fun add(node: Provider) = withContext(registryContext) {
+    override suspend fun add(node: T) = withContext(registryContext) {
         registry.add(node)
     }
 
-    override suspend fun remove(node: Provider) = withContext(registryContext) {
+    override suspend fun remove(node: T) = withContext(registryContext) {
         registry.remove(node)
     }
 
