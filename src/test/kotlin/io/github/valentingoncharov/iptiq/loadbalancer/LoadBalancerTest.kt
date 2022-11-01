@@ -1,10 +1,15 @@
 package io.github.valentingoncharov.iptiq.loadbalancer
 
+import io.github.valentingoncharov.iptiq.healthcheck.DEFAULT_HEALTH_CHECK_DELAY
+import io.github.valentingoncharov.iptiq.healthcheck.HealthCheck
+import io.github.valentingoncharov.iptiq.helpers.CountingHeartbeatProvider
 import io.github.valentingoncharov.iptiq.loadbalancer.registry.TestGenericRegistry
 import io.github.valentingoncharov.iptiq.provider.Provider
 import io.mockk.coVerify
 import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -145,6 +150,54 @@ internal class LoadBalancerTest {
             assertThat(loadBalancer.register(Provider())).isTrue
 
             assertThat(loadBalancer.include(providerId)).isFalse
+        }
+    }
+
+    @Test
+    fun `should start health check when register provider`() {
+        val dispatcher = StandardTestDispatcher()
+        val registry = TestGenericRegistry<CountingHeartbeatProvider>()
+        val healthCheck = HealthCheck(registry, dispatcher)
+        val loadBalancer = LoadBalancer(registry = registry, healthCheck = healthCheck)
+
+        runTest(dispatcher) {
+            val provider = CountingHeartbeatProvider()
+            assertThat(loadBalancer.register(provider)).isTrue
+            advanceTimeBy(5L * DEFAULT_HEALTH_CHECK_DELAY + 1L)
+            assertThat(provider.counter).isEqualTo(5)
+            loadBalancer.exclude(provider.id)
+        }
+    }
+
+    @Test
+    fun `should start health check when include provider`() {
+        val dispatcher = StandardTestDispatcher()
+        val registry = TestGenericRegistry<CountingHeartbeatProvider>()
+        val healthCheck = spyk(HealthCheck(registry, dispatcher))
+        val loadBalancer = LoadBalancer(registry = registry, healthCheck = healthCheck)
+
+        runTest(dispatcher) {
+            val provider = CountingHeartbeatProvider()
+            assertThat(loadBalancer.register(provider)).isTrue
+            loadBalancer.exclude(provider.id)
+            loadBalancer.include(provider.id)
+            coVerify(exactly = 2) { healthCheck.start(provider) }
+            loadBalancer.exclude(provider.id)
+        }
+    }
+
+    @Test
+    fun `should stop health check when exclude provider`() {
+        val dispatcher = StandardTestDispatcher()
+        val registry = TestGenericRegistry<CountingHeartbeatProvider>()
+        val healthCheck = spyk(HealthCheck(registry, dispatcher))
+        val loadBalancer = LoadBalancer(registry = registry, healthCheck = healthCheck)
+
+        runTest(dispatcher) {
+            val provider = CountingHeartbeatProvider()
+            assertThat(loadBalancer.register(provider)).isTrue
+            loadBalancer.exclude(provider.id)
+            coVerify(exactly = 1) { healthCheck.stop(provider) }
         }
     }
 }

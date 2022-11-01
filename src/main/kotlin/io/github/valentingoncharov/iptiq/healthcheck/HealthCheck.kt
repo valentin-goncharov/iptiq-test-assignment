@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 const val DEFAULT_HEALTH_CHECK_DELAY = 1000L
 
@@ -17,13 +18,15 @@ class HealthCheck<T: Heartbeat>(
 
     private val healthChecks = mutableMapOf<T, Job>()
 
-    fun start(provider: T) {
+    suspend fun start(provider: T) = withContext(dispatcher) {
         healthChecks[provider] ?: let {
             healthChecks[provider] = launchHealthCheck(provider)
         }
     }
 
-    fun stop(provider: T) = healthChecks.remove(provider)?.cancel()
+    suspend fun stop(provider: T) = withContext(dispatcher){
+        healthChecks.remove(provider)?.cancel()
+    }
 
     private fun launchHealthCheck(provider: T): Job = CoroutineScope(dispatcher).launch {
         while (true) {
