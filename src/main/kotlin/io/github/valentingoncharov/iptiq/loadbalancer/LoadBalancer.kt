@@ -7,8 +7,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
 
 const val MAXIMUM_LOAD_BALANCER_CAPACITY = 10
+const val PROVIDER_CAPACITY = 2
 
 @OptIn(DelicateCoroutinesApi::class)
 class LoadBalancer<T: IdProvider>(
@@ -22,7 +24,18 @@ class LoadBalancer<T: IdProvider>(
 
     private val registeredProviders = mutableMapOf<String, T>()
 
-    suspend fun get(): String = registry.next().get()
+    private val activeRequests = AtomicInteger(0)
+
+    suspend fun get(): String {
+        try {
+            if (activeRequests.incrementAndGet() > PROVIDER_CAPACITY * registry.size ) {
+                error("Cluster capacity exceeded")
+            }
+            return registry.next().get()
+        } finally {
+            activeRequests.decrementAndGet()
+        }
+    }
 
     suspend fun register(provider: T) = withContext(loadBalancerContext) {
         registeredProviders.putIfAbsent(provider.id, provider)

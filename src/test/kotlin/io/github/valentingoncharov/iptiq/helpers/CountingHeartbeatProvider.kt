@@ -8,4 +8,3 @@ internal class CountingHeartbeatProvider (
 ) : IdProvider, CountingHeartbeat() {
     override fun get() = id
 }
-

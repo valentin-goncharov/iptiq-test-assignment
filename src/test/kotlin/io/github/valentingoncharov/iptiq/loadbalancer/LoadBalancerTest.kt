@@ -8,9 +8,12 @@ import io.github.valentingoncharov.iptiq.provider.Provider
 import io.mockk.coVerify
 import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -199,5 +202,35 @@ internal class LoadBalancerTest {
             loadBalancer.exclude(provider.id)
             coVerify(exactly = 1) { healthCheck.stop(provider) }
         }
+    }
+
+    @Test
+    fun `should raise an exception when trying to get but no active providers exists`() {
+        val loadBalancer = LoadBalancer(TestGenericRegistry())
+
+        Assertions.assertThatThrownBy {
+            runTest { loadBalancer.get() }
+        }.isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Cluster capacity exceeded")
+    }
+
+    @Test
+    fun `should raise an exception when trying to get and cluster capacity is exceeded`() {
+        val loadBalancer = LoadBalancer(TestGenericRegistry())
+
+        Assertions.assertThatThrownBy {
+            runTest {
+                repeat(10) {
+                    assertThat(loadBalancer.register(Provider())).isTrue
+                }
+
+                repeat(21) {
+                    launch {
+                        loadBalancer.get()
+                    }
+                }
+            }
+        }.isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Cluster capacity exceeded")
     }
 }
