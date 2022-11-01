@@ -157,14 +157,14 @@ internal class LoadBalancerTest {
     fun `should start health check when register provider`() {
         val dispatcher = StandardTestDispatcher()
         val registry = TestGenericRegistry<CountingHeartbeatProvider>()
-        val healthCheck = HealthCheck(registry, dispatcher)
+        val healthCheck = spyk(HealthCheck(registry, dispatcher))
         val loadBalancer = LoadBalancer(registry = registry, healthCheck = healthCheck)
 
         runTest(dispatcher) {
             val provider = CountingHeartbeatProvider()
             assertThat(loadBalancer.register(provider)).isTrue
-            advanceTimeBy(5L * DEFAULT_HEALTH_CHECK_DELAY + 1L)
-            assertThat(provider.counter).isEqualTo(5)
+            advanceTimeBy(DEFAULT_HEALTH_CHECK_DELAY + 1L)
+            coVerify(exactly = 1) { healthCheck.start(provider) }
             loadBalancer.exclude(provider.id)
         }
     }
@@ -178,7 +178,7 @@ internal class LoadBalancerTest {
 
         runTest(dispatcher) {
             val provider = CountingHeartbeatProvider()
-            assertThat(loadBalancer.register(provider)).isTrue
+            loadBalancer.register(provider)
             loadBalancer.exclude(provider.id)
             loadBalancer.include(provider.id)
             coVerify(exactly = 2) { healthCheck.start(provider) }

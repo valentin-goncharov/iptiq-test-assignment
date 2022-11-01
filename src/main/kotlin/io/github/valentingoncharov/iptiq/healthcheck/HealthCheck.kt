@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 const val DEFAULT_HEALTH_CHECK_DELAY = 1000L
+const val DEFAULT_SUCCESS_CHECK_NUMBER = 2
 
 class HealthCheck<T: Heartbeat>(
     private val registry: Registry<T>,
@@ -29,10 +30,13 @@ class HealthCheck<T: Heartbeat>(
     }
 
     private fun launchHealthCheck(provider: T): Job = CoroutineScope(dispatcher).launch {
+        val ticker = Ticker(DEFAULT_SUCCESS_CHECK_NUMBER)
         while (true) {
             delay(DEFAULT_HEALTH_CHECK_DELAY)
             if (!provider.check()) {
-                registry.remove(provider)
+                ticker.reset { registry.remove(provider) }
+            } else {
+                ticker.tick { registry.add(provider) }
             }
         }
     }

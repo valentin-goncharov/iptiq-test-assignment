@@ -2,6 +2,7 @@ package io.github.valentingoncharov.iptiq.healthcheck
 
 import io.github.valentingoncharov.iptiq.helpers.CountingHeartbeat
 import io.github.valentingoncharov.iptiq.helpers.FailHeartbeat
+import io.github.valentingoncharov.iptiq.helpers.SuccessHeartbeat
 import io.github.valentingoncharov.iptiq.loadbalancer.registry.Registry
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -62,6 +63,36 @@ internal class HealthCheckTest {
             healthCheck.stop(provider)
             advanceTimeBy(10L * DEFAULT_HEALTH_CHECK_DELAY)
             Assertions.assertThat(provider.counter).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun `should add provider into registry when check success 2 times`() {
+        val dispatcher = StandardTestDispatcher()
+        runTest(dispatcher) {
+            val registry = mockk<Registry<SuccessHeartbeat>>(relaxed = true)
+            val healthCheck = HealthCheck(registry, dispatcher = dispatcher )
+            val provider = SuccessHeartbeat()
+
+            healthCheck.start(provider)
+            advanceTimeBy(2 * DEFAULT_HEALTH_CHECK_DELAY + 1L)
+            coVerify(exactly = 1) { registry.add(provider) }
+            healthCheck.stop(provider)
+        }
+    }
+
+    @Test
+    fun `should add provider only once into registry even if check success more times`() {
+        val dispatcher = StandardTestDispatcher()
+        runTest(dispatcher) {
+            val registry = mockk<Registry<SuccessHeartbeat>>(relaxed = true)
+            val healthCheck = HealthCheck(registry, dispatcher = dispatcher )
+            val provider = SuccessHeartbeat()
+
+            healthCheck.start(provider)
+            advanceTimeBy(100L * DEFAULT_HEALTH_CHECK_DELAY)
+            coVerify(exactly = 1) { registry.add(provider) }
+            healthCheck.stop(provider)
         }
     }
 }
