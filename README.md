@@ -33,5 +33,6 @@ Assuming that each provider can handle a maximum number of Y parallel requests, 
 Every component described in the exercise is a piece of software of the same codebase. You don't need to build a "runnable" application, there is no need to create any real server or rest service, no need to build any real network-based interaction, there should be no framework within the codebase. Simulating real world scenario means however that it has to be working properly and effectively in all scenario that can happen in real life (eg. handling parallel requests, managing edge cases etc.)
 
 # Solution 
-Language: Kotlin
-Multitasking: Coroutines
+I used Kotlin as a programming language to solve this assignment.
+To ensure parallelism, I used the coroutines mechanism.
+Additional frameworks are used for testing only.
