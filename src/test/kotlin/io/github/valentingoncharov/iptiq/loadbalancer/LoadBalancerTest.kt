@@ -4,11 +4,10 @@ import io.github.valentingoncharov.iptiq.healthcheck.DEFAULT_HEALTH_CHECK_DELAY
 import io.github.valentingoncharov.iptiq.healthcheck.HealthCheck
 import io.github.valentingoncharov.iptiq.helpers.CountingHeartbeatProvider
 import io.github.valentingoncharov.iptiq.loadbalancer.registry.TestGenericRegistry
-import io.github.valentingoncharov.iptiq.provider.Provider
+import io.github.valentingoncharov.iptiq.provider.IdProvider
 import io.mockk.coVerify
 import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -23,10 +22,10 @@ internal class LoadBalancerTest {
 
     @Test
     fun `should register new provider`() {
-        val registry = TestGenericRegistry<Provider>()
+        val registry = TestGenericRegistry<IdProvider>()
         val loadBalancer = LoadBalancer(registry)
         runTest {
-            val provider = Provider("Test 1")
+            val provider = IdProvider("Test 1")
             assertThat(registry.size).isEqualTo(0)
             assertThat(loadBalancer.register(provider)).isTrue
             assertThat(registry.size).isEqualTo(1)
@@ -35,32 +34,32 @@ internal class LoadBalancerTest {
 
     @Test
     fun `should register defined number of providers`() {
-        val registry = TestGenericRegistry<Provider>()
+        val registry = TestGenericRegistry<IdProvider>()
         val loadBalancer = LoadBalancer(registry = registry, capacity = 2)
         runTest {
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isFalse
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isFalse
             assertThat(registry.size).isEqualTo(2)
         }
     }
 
     @Test
     fun `should register default number of providers`() {
-        val registry = TestGenericRegistry<Provider>()
+        val registry = TestGenericRegistry<IdProvider>()
         val loadBalancer = LoadBalancer(registry)
         runTest {
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isTrue
-            assertThat(loadBalancer.register(Provider())).isFalse
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isFalse
             assertThat(registry.size).isEqualTo(10)
         }
     }
@@ -70,12 +69,12 @@ internal class LoadBalancerTest {
         val providerId1 = "Test 1"
         val providerId2 = "Test 2"
         val providerId3 = "Test 3"
-        val registry = spyk(TestGenericRegistry<Provider>())
+        val registry = spyk(TestGenericRegistry<IdProvider>())
         val loadBalancer = LoadBalancer(registry)
         runTest {
-            assertThat(loadBalancer.register(Provider(providerId1))).isTrue
-            assertThat(loadBalancer.register(Provider(providerId2))).isTrue
-            assertThat(loadBalancer.register(Provider(providerId3))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId1))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId2))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId3))).isTrue
             assertThat(registry.size).isEqualTo(3)
 
             repeat(10) {
@@ -90,7 +89,7 @@ internal class LoadBalancerTest {
         val loadBalancer = LoadBalancer(TestGenericRegistry())
 
         runTest {
-            assertThat(loadBalancer.register(Provider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
 
             assertThat(loadBalancer.include(UUID.randomUUID().toString())).isFalse
         }
@@ -99,13 +98,13 @@ internal class LoadBalancerTest {
 
     @Test
     fun `should exclude provider from load balancing`() {
-        val registry = TestGenericRegistry<Provider>()
+        val registry = TestGenericRegistry<IdProvider>()
         val loadBalancer = LoadBalancer(registry)
 
         val providerId = UUID.randomUUID().toString()
 
         runTest {
-            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId))).isTrue
             assertThat(registry.size).isEqualTo(1)
 
             assertThat(loadBalancer.exclude(providerId)).isTrue
@@ -117,7 +116,7 @@ internal class LoadBalancerTest {
     fun `should return false when exclude not registered provider`() {
         val loadBalancer = LoadBalancer(TestGenericRegistry())
         runTest {
-            assertThat(loadBalancer.register(Provider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
 
             assertThat(loadBalancer.exclude(UUID.randomUUID().toString())).isFalse
         }
@@ -129,7 +128,7 @@ internal class LoadBalancerTest {
 
         val providerId = UUID.randomUUID().toString()
         runTest {
-            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId))).isTrue
 
             assertThat(loadBalancer.exclude(providerId)).isTrue
 
@@ -146,11 +145,11 @@ internal class LoadBalancerTest {
         val providerId = UUID.randomUUID().toString()
 
         runTest {
-            assertThat(loadBalancer.register(Provider(providerId))).isTrue
+            assertThat(loadBalancer.register(IdProvider(providerId))).isTrue
 
             assertThat(loadBalancer.exclude(providerId)).isTrue
 
-            assertThat(loadBalancer.register(Provider())).isTrue
+            assertThat(loadBalancer.register(IdProvider())).isTrue
 
             assertThat(loadBalancer.include(providerId)).isFalse
         }
@@ -221,7 +220,7 @@ internal class LoadBalancerTest {
         Assertions.assertThatThrownBy {
             runTest {
                 repeat(10) {
-                    assertThat(loadBalancer.register(Provider())).isTrue
+                    assertThat(loadBalancer.register(IdProvider())).isTrue
                 }
 
                 repeat(21) {

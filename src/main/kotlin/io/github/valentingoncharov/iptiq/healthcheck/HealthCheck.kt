@@ -19,24 +19,24 @@ class HealthCheck<T: Heartbeat>(
 
     private val healthChecks = mutableMapOf<T, Job>()
 
-    suspend fun start(provider: T) = withContext(dispatcher) {
-        healthChecks[provider] ?: let {
-            healthChecks[provider] = launchHealthCheck(provider)
+    suspend fun start(heartbeat: T) = withContext(dispatcher) {
+        healthChecks[heartbeat] ?: let {
+            healthChecks[heartbeat] = launchHealthCheck(heartbeat)
         }
     }
 
-    suspend fun stop(provider: T) = withContext(dispatcher){
-        healthChecks.remove(provider)?.cancel()
+    suspend fun stop(heartbeat: T) = withContext(dispatcher){
+        healthChecks.remove(heartbeat)?.cancel()
     }
 
-    private fun launchHealthCheck(provider: T): Job = CoroutineScope(dispatcher).launch {
+    private fun launchHealthCheck(heartbeat: T): Job = CoroutineScope(dispatcher).launch {
         val ticker = Ticker(DEFAULT_SUCCESS_CHECK_NUMBER)
         while (true) {
             delay(DEFAULT_HEALTH_CHECK_DELAY)
-            if (!provider.check()) {
-                ticker.reset { registry.remove(provider) }
+            if (!heartbeat.check()) {
+                ticker.reset { registry.remove(heartbeat) }
             } else {
-                ticker.tick { registry.add(provider) }
+                ticker.tick { registry.add(heartbeat) }
             }
         }
     }

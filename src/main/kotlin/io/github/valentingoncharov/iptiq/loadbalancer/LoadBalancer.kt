@@ -2,7 +2,7 @@ package io.github.valentingoncharov.iptiq.loadbalancer
 
 import io.github.valentingoncharov.iptiq.healthcheck.HealthCheck
 import io.github.valentingoncharov.iptiq.loadbalancer.registry.Registry
-import io.github.valentingoncharov.iptiq.provider.IdProvider
+import io.github.valentingoncharov.iptiq.provider.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.newSingleThreadContext
@@ -13,7 +13,7 @@ const val MAXIMUM_LOAD_BALANCER_CAPACITY = 10
 const val PROVIDER_CAPACITY = 2
 
 @OptIn(DelicateCoroutinesApi::class)
-class LoadBalancer<T: IdProvider>(
+class LoadBalancer<T: Provider>(
     private val registry: Registry<T>,
     private val capacity: Int = MAXIMUM_LOAD_BALANCER_CAPACITY,
     private val healthCheck: HealthCheck<T> = HealthCheck(registry)
