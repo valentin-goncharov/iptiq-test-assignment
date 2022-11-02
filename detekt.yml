@@ -1,0 +1,12 @@
+build:
+  weights:
+    comments: 0
+    complexity: 0
+    coroutines: 0
+    empty-blocks: 0
+    exceptions: 0
+    naming: 0
+    performance: 0
+    potential-bugs: 0
+    style: 0
+
